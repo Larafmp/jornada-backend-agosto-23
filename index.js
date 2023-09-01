@@ -15,22 +15,21 @@ const collection =db.collection("herois");
 
 const app = express();
 
-// Habilitamos o processamento de JSON
-app.use(express.json());
+// const url = "mongodb://localhost:27017";
+const url = "mongodb://127.0.0.1:27017";
+// const url = "mongodb+srv://admin:V90K7ehx2krw7OlM@cluster0.gbnr4oi.mongodb.net";
+const dbName = "jornada-backend-agosto-23";
+const client = new MongoClient(url);
 
-// Endpoint Principal
-app.get("/", function (req, res) {
-  res.send("Hello World");
-});
+async function main() {
+  console.info("Conectando ao banco de dados...");
+  await client.connect();
+  console.info("Banco de dados conectado com sucesso!");
 
-// Endpoint /oi
-app.get("/oi", function (req, res) {
-  res.send("Olá, mundo!");
-});
+  const db = client.db(dbName);
+  const collection = db.collection("herois");
 
-// Endpoints de Herois
-const lista = ["Mulher Maravilha", "Capitã Marvel", "Homem de Ferro"];
-//             0                    1                2
+  const app = express();
 
 // Read All -> [GET] /herois
 app.get("/herois", async function (req, res) {
@@ -63,9 +62,8 @@ app.get("/herois/:id", async function (req, res) {
     _id: new ObjectId(id),
   });
 
-  // Exibimos o item na resposta do endpoint
-  res.send(item);
-});
+    // Inserir o item na collection
+    await collection.insertOne(item);
 
 // Update -> [PUT] /herois/:id
 app.put("/herois/:id", async function (req, res) {
@@ -98,6 +96,5 @@ app.delete("/herois/:id", async function (req, res) {
 });
 
 app.listen(3000);
-}
-
 main();
+}
