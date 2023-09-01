@@ -1,4 +1,18 @@
 const express = require("express");
+const {MongoClient, ObjectId} =require("mongodb");
+
+const url = "mongodb://127.0.0.1:27017";
+const dbName  = "jornada-backend-agosto-2023";
+const client = new MongoClient(url);
+
+async function main (){
+console.info("Conectando ao banco...");
+await client.connect();
+console.info("Banco de dados conectando com sucesso!");
+
+const db =client.db(dbName);
+const collection =db.collection("herois");
+
 const app = express();
 
 // Habilitamos o processamento de JSON
@@ -19,59 +33,71 @@ const lista = ["Mulher Maravilha", "Capitã Marvel", "Homem de Ferro"];
 //             0                    1                2
 
 // Read All -> [GET] /herois
-app.get("/herois", function (req, res) {
-  res.send(lista.filter(Boolean));
+app.get("/herois", async function (req, res) {
+  const itens = await collection.find().toArray();
+  res.send(itens);
 });
 
 // Create -> [POST] /herois
-app.post("/herois", function (req, res) {
+app.post("/herois", async function (req, res) {
   // console.log(req.body, typeof req.body);
 
   // Extrai o nome do Body da Request (Corpo da Requisição)
-  const item = req.body.nome;
+  const item = req.body;
 
-  // Inserir o item na lista
-  lista.push(item);
+  //Inserir o item na collection
+ await collection.insertOne(item);
+
 
   // Enviamos uma resposta de sucesso
-  res.send("Item criado com sucesso!");
+  res.status(201).send(item);
 });
 
 // Read By Id -> [GET] /herois/:id
-app.get("/herois/:id", function (req, res) {
+app.get("/herois/:id", async function (req, res) {
   // Pegamos o parâmetro de rota ID
-  const id = req.params.id - 1;
+  const id = req.params.id;
 
   // Pegamos a informação da lista
-  const item = lista[id];
+  const item = await collection.findOne({
+    _id: new ObjectId(id),
+  });
 
   // Exibimos o item na resposta do endpoint
   res.send(item);
 });
 
 // Update -> [PUT] /herois/:id
-app.put("/herois/:id", function (req, res) {
+app.put("/herois/:id", async function (req, res) {
   // Pegamos o parâmetro de rota ID
-  const id = req.params.id - 1;
+  const id = req.params.id;
 
   // Extrai o nome do Body da Request (Corpo da Requisição)
-  const item = req.body.nome;
+  const item = req.body;
 
-  // Atualizamos a informação na lista de registros
-  lista[id] = item;
+  // Atualizamos a informação na collection
+await collection.updateOne(
+  {_id: newObjectId(id)},
+  { $set: item},
+)
 
-  res.send("Item editado com sucesso!");
+  res.send(item);
 });
 
 // Delete -> [DELETE] /herois/:id
-app.delete("/herois/:id", function (req, res) {
+app.delete("/herois/:id", async function (req, res) {
   // Pegamos o parâmetro de rota ID
-  const id = req.params.id - 1;
+  const id = req.params.id;
 
   // Excluir o item da lista
-  delete lista[id];
+  await collection.deleteOne(
+    {_id: newObjectId(id)});
+  
 
-  res.send("Item excluído com sucesso!");
+    res.status(204).send();
 });
 
 app.listen(3000);
+}
+
+main();
